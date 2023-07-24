@@ -1,15 +1,29 @@
-import { NextFunction, Request, Response } from "express";
-import GoalFrame from "../frames/goal.frame";
-import NameFrame from "../frames/name.frame";
-import SparklineFrame from "../frames/sparkline.frame";
+import { Request, Response } from "express";
+import { ECoinId, getPrice } from "./coinlore.service";
 
-const getResponse = async (req: Request, res: Response, next: NextFunction) => {
-    const name: NameFrame = { icon: 653, text: "Name" };
-    const goal: GoalFrame = { goalData: { start: 0, current: 50, end: 100, unit: "Goal" }, icon: 87 };
-    const sparkline: SparklineFrame = { index: 5, chartData: [25, 8, 69, 87, 76] };
+const iconDict: { [key: number]: number } = {
+    [ECoinId.BTC]: 857,
+    [ECoinId.ETH]: 17007
+}
+
+const currencyDict: { [key: string]: ECoinId } = {
+    "BTC": ECoinId.BTC,
+    "ETH": ECoinId.ETH
+}
+
+const getResponse = async (req: Request, res: Response) => {
+    const currency: ECoinId = req.query.currency ? currencyDict[req.query.currency as string] || ECoinId.BTC : ECoinId.BTC;
+    const currencyData = await getPrice(currency);
+    const price = currencyData ? currencyData[0].price_usd : "N/A";
+    const icon = iconDict[currency] || ECoinId.BTC;
 
     return res.status(200).json({
-        frames: [name, goal, sparkline]
+        frames: [
+            {
+                icon: icon,
+                text: `${price} $`
+            }
+        ]
     });
 };
 
